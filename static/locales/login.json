@@ -1,0 +1,12 @@
+{
+  "zh-CN": {},
+  "en": {
+    "Vids2API 登录": "Sign in to Vids2API",
+    "登录到管理控制台": "Sign in to the management console",
+    "用户名或密码错误": "Invalid username or password",
+    "登录成功，正在跳转": "Signed in, redirecting",
+    "默认账号 admin / admin，登录后请尽快修改": "Default credentials admin / admin; change them after signing in",
+    "登录 - Vids2API": "Sign in - Vids2API",
+    "首次部署请使用初始账号，登录后尽快修改": "Use the initial credentials on first launch, then change them"
+  }
+}

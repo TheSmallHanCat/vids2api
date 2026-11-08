@@ -1,0 +1,29 @@
+{
+  "zh-CN": {},
+  "en": {
+    "生成测试": "Generation playground",
+    "模型": "Model",
+    "提示词": "Prompt",
+    "提交生成": "Submit",
+    "视频": "Video",
+    "图片": "Image",
+    "语音": "Speech",
+    "时长（秒）": "Duration (s)",
+    "尺寸": "Size",
+    "景别": "Shot mode",
+    "比例": "Aspect ratio",
+    "风格": "Style",
+    "数量": "Count",
+    "声线": "Voice",
+    "结果": "Result",
+    "生成中...": "Generating...",
+    "提交成功": "Submitted",
+    "提交失败": "Submission failed",
+    "幂等键": "Idempotency key",
+    "随机生成": "Randomize",
+    "收据": "Receipt",
+    "下载产物": "Download media",
+    "← 返回控制台": "< Back to console",
+    "生成测试 - Vids2API": "Playground - Vids2API"
+  }
+}

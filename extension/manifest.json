@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Vids2API Pool Pusher",
+  "version": "1.0.0",
+  "default_locale": "zh_CN",
+  "description": "__MSG_extDescription__",
+  "permissions": [
+    "storage",
+    "cookies",
+    "tabs"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "host_permissions": [
+    "https://*.google.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Vids2API Pool Pusher"
+  }
+}

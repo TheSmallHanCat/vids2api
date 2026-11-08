@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API 指南 - Vids2API</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
+    code, pre { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col" data-i18n-page="api-guide">
+  <header class="border-b border-slate-800 bg-slate-900/60">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center gap-4">
+      <a href="/manage" class="text-sm text-slate-400 hover:text-slate-200">← Vids2API</a>
+      <span class="font-medium">API 指南</span>
+    </div>
+  </header>
+  <main class="max-w-4xl w-full flex-1 mx-auto px-4 py-8 space-y-8 text-sm leading-relaxed">
+    <section class="space-y-3">
+      <h2 class="text-lg font-medium">认证与通用约定</h2>
+      <ul class="list-disc pl-5 space-y-1 text-slate-300">
+        <li>Base URL：<code class="text-indigo-300">http://your-host:8687</code></li>
+        <li>鉴权：<code class="text-indigo-300">Authorization: Bearer YOUR_API_KEY</code>（也支持 <code>x-goog-api-key</code> 头或 <code>?key=</code> 参数）</li>
+        <li>所有生成端点必须携带 <code class="text-indigo-300">Idempotency-Key</code> 头（1-200 字符）。同键同参重放原收据，同键异参返回 409 冲突。</li>
+        <li>收据一旦落在某账号（含失败），永不换号补发；未知接受状态只读不重发。</li>
+      </ul>
+    </section>
+    <section class="space-y-3">
+      <h2 class="text-lg font-medium">模型</h2>
+      <pre class="bg-slate-900 border border-slate-800 rounded-xl p-4 overflow-x-auto">curl -H "Authorization: Bearer $KEY" http://localhost:8687/v1/models</pre>
+      <p class="text-slate-400">返回 <code>vids-image</code>、<code>vids-speech</code>、<code>vids-video</code> 三个模型及能力表（比例 / 时长 / 尺寸 / 声线）。</p>
+    </section>
+    <section class="space-y-3">
+      <h2 class="text-lg font-medium">图片生成</h2>
+      <pre class="bg-slate-900 border border-slate-800 rounded-xl p-4 overflow-x-auto">curl -X POST http://localhost:8687/v1/images/generations \
+  -H "Authorization: Bearer $KEY" \
+  -H "Idempotency-Key: demo-key-1" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"一只戴宇航员头盔的柴犬","n":1,"aspect_ratio":"16:9","style":"photography"}'</pre>
+      <p class="text-slate-400">支持 <code>response_format: "url" | "b64_json"</code>。图片编辑用 <code>POST /v1/images/edits</code>（multipart，字段 <code>image</code> + <code>prompt</code>）。</p>
+    </section>
+    <section class="space-y-3">
+      <h2 class="text-lg font-medium">语音合成</h2>
+      <pre class="bg-slate-900 border border-slate-800 rounded-xl p-4 overflow-x-auto">curl -X POST http://localhost:8687/v1/audio/speech \
+  -H "Authorization: Bearer $KEY" \
+  -H "Idempotency-Key: demo-key-2" \
+  -H "Content-Type: application/json" \
+  -d '{"input":"欢迎使用 vids2api","voice":"Puck"}' \
+  --output speech.wav</pre>
+      <p class="text-slate-400">完成即返回 WAV 文件；未就绪返回 202 与收据，稍后经收据端点重试下载。</p>
+    </section>
+    <section class="space-y-3">
+      <h2 class="text-lg font-medium">视频生成</h2>
+      <pre class="bg-slate-900 border border-slate-800 rounded-xl p-4 overflow-x-auto">curl -X POST http://localhost:8687/v1/videos \
+  -H "Authorization: Bearer $KEY" \
+  -H "Idempotency-Key: demo-key-3" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"雨夜霓虹街道上的赛博朋克追踪镜头","seconds":4,"size":"1280x720"}'</pre>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs border border-slate-800 rounded-lg">
+          <thead class="bg-slate-900 text-slate-400">
+            <tr><th class="text-left px-3 py-2">端点</th><th class="text-left px-3 py-2">说明</th></tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/70 text-slate-300">
+            <tr><td class="px-3 py-2 font-mono">POST /v1/videos</td><td class="px-3 py-2">提交任务（JSON 或 multipart：<code>input_video</code> MP4 ≤50MiB、<code>input_reference[]</code> 参考图）</td></tr>
+            <tr><td class="px-3 py-2 font-mono">GET /v1/videos</td><td class="px-3 py-2">任务列表（limit / after / order）</td></tr>
+            <tr><td class="px-3 py-2 font-mono">GET /v1/videos/{id}</td><td class="px-3 py-2">任务状态</td></tr>
+            <tr><td class="px-3 py-2 font-mono">GET /v1/videos/{id}/content</td><td class="px-3 py-2">下载完成的 MP4</td></tr>
+            <tr><td class="px-3 py-2 font-mono">GET /v1/vids/generations/{id}</td><td class="px-3 py-2">原始生成收据</td></tr>
+            <tr><td class="px-3 py-2 font-mono">POST /v1/vids/generations/{id}/download</td><td class="px-3 py-2">恢复失败的结果下载（不重复计费）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-slate-400">模式：<code>text / animate / ingredients / edit / extend / upscale</code>；编辑、续写、放大可通过 <code>source_id</code> 引用已完成视频或直接上传 <code>video_base64</code>。</p>
+    </section>
+    <section class="space-y-3">
+      <h2 class="text-lg font-medium">错误结构</h2>
+      <pre class="bg-slate-900 border border-slate-800 rounded-xl p-4 overflow-x-auto">{
+  "error": {
+    "message": "All eligible Vids accounts are busy",
+    "type": "invalid_request_error",
+    "code": "busy",
+    "param": null
+  }
+}</pre>
+      <p class="text-slate-400">常见 code：<code>busy</code>（全部账号在途）、<code>quota_exhausted</code>（配额耗尽）、<code>session_unavailable</code>（无可用会话）、<code>idempotency_conflict</code>（幂等键冲突）。</p>
+    </section>
+  </main>
+  <footer class="shrink-0 border-t border-slate-800 px-4 py-5 text-center text-xs text-slate-400">
+    <p>© 2026 <a href="https://linux.do/u/thesmallhancat/summary" target="_blank" rel="noopener noreferrer" class="underline underline-offset-2 hover:opacity-80">TheSmallHanCat</a>. All rights reserved.</p>
+  </footer>
+</body>
+</html>

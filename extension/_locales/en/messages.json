@@ -1,0 +1,51 @@
+{
+  "extDescription": {
+    "message": "Push the current browser's Google session into a Vids2API account pool."
+  },
+  "title": {
+    "message": "Vids2API Pool Pusher"
+  },
+  "serverLabel": {
+    "message": "Server URL"
+  },
+  "tokenLabel": {
+    "message": "Push token"
+  },
+  "remarkLabel": {
+    "message": "Remark (optional)"
+  },
+  "pushButton": {
+    "message": "Push current sign-in"
+  },
+  "statusWorking": {
+    "message": "Collecting credentials and pushing…"
+  },
+  "statusDone": {
+    "message": "Done: account $ACTION$ (#$ID$)",
+    "placeholders": {
+      "action": { "content": "$1" },
+      "id": { "content": "$2" }
+    }
+  },
+  "errNotConfigured": {
+    "message": "Fill in the server URL and push token first"
+  },
+  "errNotSignedIn": {
+    "message": "No signed-in Google session in this browser (missing $1); sign in first"
+  },
+  "errHomeFetch": {
+    "message": "Failed to load the Vids home page (HTTP $1)"
+  },
+  "errNoDocument": {
+    "message": "Could not find or create a Vids document; open vids.new manually, then retry"
+  },
+  "errPermission": {
+    "message": "Server access permission was not granted"
+  },
+  "errPush": {
+    "message": "Push failed (HTTP $1)"
+  },
+  "errNoReply": {
+    "message": "Background service did not respond; reload the extension"
+  }
+}

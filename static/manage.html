@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html data-i18n-page="manage" lang="zh-CN" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="管理控制台 - Vids2API">管理控制台 - Vids2API</title>
+  <script src="/static/i18n.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes slide-up{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+    .animate-slide-up{animation:slide-up .3s ease-out}
+    .tab-btn{transition:all .2s ease}
+    .line-clamp-2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+    .icon-btn{display:inline-flex;align-items:center;justify-content:center;height:2rem;width:2rem;border-radius:0.375rem;transition:background-color .15s}
+    .icon-btn:hover{background:hsl(0 0% 96.1%)}
+    .capability-list{display:inline-flex;align-items:center;gap:.375rem;white-space:nowrap}
+    .capability-badge{display:inline-flex;align-items:center;gap:.3rem;border:1px solid #e2e8f0;border-radius:.375rem;background:#f8fafc;padding:.25rem .4rem;color:#334155;font-size:.75rem;line-height:1rem}
+    .capability-badge svg{width:.875rem;height:.875rem;flex:none}
+    .capability-badge.is-disabled{border-style:dashed;background:transparent;color:#737373}
+    .capability-badge.is-disabled .capability-label{text-decoration:line-through}
+    #panelSettings{max-width:64rem;margin-inline:auto}
+    #panelSettings>div{min-width:0;height:100%}
+    #panelSettings button:disabled{opacity:.5;cursor:not-allowed}
+    #panelSettings input:disabled,#panelSettings select:disabled{opacity:.65}
+    .log-filters{display:grid;grid-template-columns:minmax(12rem,1fr) repeat(3,minmax(7rem,auto)) auto;gap:.75rem;padding:1rem;border-bottom:1px solid #e5e7eb}
+    .log-filters input,.log-filters select{width:100%;min-width:0;height:2.25rem;border:1px solid #e5e7eb;border-radius:.375rem;background:white;padding:0 .65rem;font-size:.8125rem}
+    .log-search{display:flex;gap:.5rem;min-width:0}
+    .logs-table{width:100%;min-width:58rem;table-layout:fixed;font-size:.8125rem}
+    .logs-table th{padding:.75rem;text-align:left;font-weight:500;color:#737373;border-bottom:1px solid #e5e7eb}
+    .logs-table td{padding:.875rem .75rem;vertical-align:middle}
+    .logs-table tbody tr:hover{background:#fafafa}
+    .log-subtext{font-size:.6875rem;line-height:1.5;color:#737373;margin-top:.25rem}
+    .log-status{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .5rem;border-radius:.375rem;font-size:.75rem;font-weight:500}
+    .log-status--completed{background:#f0fdf4;color:#15803d}
+    .log-status--failed{background:#fef2f2;color:#b91c1c}
+    .log-status--processing{background:#eff6ff;color:#1d4ed8}
+    .log-status--unknown{background:#fffbeb;color:#92400e}
+    .log-progress{height:.2rem;max-width:7rem;border-radius:1rem;overflow:hidden;background:#e5e7eb;margin-top:.4rem}
+    .log-progress>span{display:block;height:100%;background:#60a5fa}
+    .log-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+    .log-detail-grid dt{font-size:.75rem;color:#737373;margin-bottom:.3rem}
+    .log-detail-grid dd{font-size:.8125rem;overflow-wrap:anywhere}
+    .log-detail-wide{grid-column:1/-1}
+    .log-payload{margin-top:.5rem;border:1px solid #e5e7eb;border-radius:.5rem;padding:.875rem;max-height:18rem;overflow:auto;background:#fafafa;font-size:.75rem;white-space:pre-wrap;overflow-wrap:anywhere}
+    .log-preview-media{width:100%;max-height:min(24rem,45vh);max-height:min(24rem,45dvh);object-fit:contain;border-radius:.5rem;background:#f5f5f5}
+    html.log-modal-open{overflow:hidden;scrollbar-gutter:stable}
+    #logModal{overflow:hidden;overscroll-behavior:contain}
+    .log-dialog{display:flex;flex-direction:column;max-height:calc(100vh - 2rem);max-height:calc(100dvh - 2rem);overflow:hidden}
+    .log-dialog-header,.log-dialog-footer{flex:none;padding:1rem 1.25rem}
+    .log-dialog-header{border-bottom:1px solid #e5e7eb}
+    .log-dialog-footer{border-top:1px solid #e5e7eb}
+    #logDetailContent{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:1.25rem}
+    #panelLogs button:disabled{opacity:.45;cursor:not-allowed}
+    #panelLogs input:focus-visible,#panelLogs select:focus-visible,#panelLogs button:focus-visible,#logModal button:focus-visible,#logModal a:focus-visible{outline:2px solid #404040;outline-offset:3px}
+    @media(max-width:1023px){.log-filters{grid-template-columns:repeat(3,minmax(0,1fr))}.log-search{grid-column:1/-1}}
+    @media(max-width:639px){.log-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.log-detail-grid{grid-template-columns:minmax(0,1fr)}}
+  </style>
+  <script>
+    tailwind.config={theme:{extend:{colors:{border:"hsl(0 0% 89%)",input:"hsl(0 0% 89%)",ring:"hsl(0 0% 3.9%)",background:"hsl(0 0% 100%)",foreground:"hsl(0 0% 3.9%)",primary:{DEFAULT:"hsl(0 0% 9%)",foreground:"hsl(0 0% 98%)"},secondary:{DEFAULT:"hsl(0 0% 96.1%)",foreground:"hsl(0 0% 9%)"},muted:{DEFAULT:"hsl(0 0% 96.1%)",foreground:"hsl(0 0% 45.1%)"},destructive:{DEFAULT:"hsl(0 84.2% 60.2%)",foreground:"hsl(0 0% 98%)"}}}}}
+  </script>
+</head>
+<body class="min-h-screen flex flex-col bg-background text-foreground antialiased">
+
+<header class="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur">
+  <div class="mx-auto flex h-14 max-w-7xl items-center px-6">
+    <div class="mr-4 flex items-baseline gap-3">
+      <span class="font-bold text-xl">Vids2API</span>
+      <span class="text-xs text-muted-foreground hidden sm:inline" data-i18n="媒体生成服务">媒体生成服务</span>
+    </div>
+    <div class="flex flex-1 items-center justify-end gap-3">
+      <select data-language-select aria-label="Language" class="h-8 rounded-md border border-input bg-background px-2 text-xs">
+        <option value="zh-CN">中文</option><option value="en">English</option>
+      </select>
+      <a href="/api-guide" target="_blank" class="inline-flex items-center justify-center text-xs transition-colors hover:bg-accent hover:text-accent-foreground h-7 px-2.5" data-i18n="API 指南">API 指南</a>
+      <button onclick="logout()" class="inline-flex items-center justify-center text-xs transition-colors hover:bg-accent hover:text-accent-foreground h-7 px-2.5 gap-1">
+        <svg class="h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        <span data-i18n="退出">退出</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="mx-auto w-full max-w-7xl flex-1 px-6 py-6">
+  <div class="border-b border-border mb-6 overflow-x-auto">
+    <nav class="flex min-w-max space-x-8">
+      <button onclick="switchTab('accounts')" data-tab="accounts" class="tab-btn border-b-2 border-primary text-sm font-medium py-3 px-1"><span data-i18n="账号池">账号池</span></button>
+      <button onclick="switchTab('settings')" data-tab="settings" class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1"><span data-i18n="系统配置">系统配置</span></button>
+      <button onclick="switchTab('logs')" data-tab="logs" class="tab-btn border-b-2 border-transparent text-sm font-medium py-3 px-1"><span data-i18n="请求日志">请求日志</span></button>
+      <a href="/test" target="_blank" class="tab-btn inline-flex items-center border-b-2 border-transparent text-sm font-medium py-3 px-1"><span data-i18n="测试工作台">测试工作台</span></a>
+    </nav>
+  </div>
+
+  <!-- 账号池面板 -->
+  <div id="panelAccounts">
+    <div class="grid gap-4 grid-cols-2 md:grid-cols-5 mb-6">
+      <div class="rounded-lg border border-border bg-background p-4">
+        <p class="text-sm font-medium text-muted-foreground mb-2" data-i18n="账号总数">账号总数</p>
+        <h3 class="text-xl font-bold" id="statTotal">-</h3>
+      </div>
+      <div class="rounded-lg border border-border bg-background p-4">
+        <p class="text-sm font-medium text-muted-foreground mb-2" data-i18n="活跃账号">活跃账号</p>
+        <h3 class="text-xl font-bold text-green-600" id="statActive">-</h3>
+      </div>
+      <div class="rounded-lg border border-border bg-background p-4">
+        <p class="text-sm font-medium text-muted-foreground mb-2" data-i18n="就绪账号">就绪账号</p>
+        <h3 class="text-xl font-bold text-blue-600" id="statReady">-</h3>
+      </div>
+      <div class="rounded-lg border border-border bg-background p-4">
+        <p class="text-sm font-medium text-muted-foreground mb-2" data-i18n="今日生成 / 累计">今日生成 / 累计</p>
+        <h3 class="text-xl font-bold text-purple-600" id="statGeneration">-</h3>
+      </div>
+      <div class="rounded-lg border border-border bg-background p-4">
+        <p class="text-sm font-medium text-muted-foreground mb-2" data-i18n="今日错误 / 累计">今日错误 / 累计</p>
+        <h3 class="text-xl font-bold text-destructive" id="statErrors">-</h3>
+      </div>
+    </div>
+
+    <div class="rounded-lg border border-border bg-background">
+      <div class="flex flex-wrap items-center justify-between gap-4 p-4 border-b border-border">
+        <h3 class="text-lg font-semibold" data-i18n="账号列表">账号列表</h3>
+        <div class="flex flex-wrap items-center gap-3">
+          <button onclick="loadAll()" class="icon-btn" title="刷新" data-i18n-title="刷新">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+          </button>
+          <button onclick="openAddModal()" class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3">
+            <svg class="h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <span class="text-sm font-medium" data-i18n="接入账号">接入账号</span>
+          </button>
+        </div>
+      </div>
+      <div class="relative w-full overflow-x-auto">
+        <table class="w-full table-auto text-sm">
+          <thead>
+            <tr class="border-b border-border">
+              <th class="h-10 px-2.5 text-left align-middle font-medium text-muted-foreground" data-i18n="账号 / 身份">账号 / 身份</th>
+              <th class="h-10 px-2.5 text-center align-middle font-medium text-muted-foreground" data-i18n="状态">状态</th>
+              <th class="h-10 px-2.5 text-center align-middle font-medium text-muted-foreground" data-i18n="能力">能力</th>
+              <th class="h-10 px-2.5 text-center align-middle font-medium text-muted-foreground" data-i18n="剩余配额 图/视/语">剩余配额 图/视/语</th>
+              <th class="h-10 px-2.5 text-center align-middle font-medium text-muted-foreground" data-i18n="累计 图/视/语">累计 图/视/语</th>
+              <th class="h-10 px-2.5 text-center align-middle font-medium text-muted-foreground" data-i18n="总调用">总调用</th>
+              <th class="h-10 px-2.5 text-left align-middle font-medium text-muted-foreground" data-i18n="最近错误">最近错误</th>
+              <th class="h-10 px-2.5 text-right align-middle font-medium text-muted-foreground" data-i18n="操作">操作</th>
+            </tr>
+          </thead>
+          <tbody id="accountTableBody" class="divide-y divide-border"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 系统配置面板 -->
+  <div id="panelSettings" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+    <div class="rounded-lg border border-border bg-background p-5">
+      <h3 class="text-lg font-semibold mb-4" data-i18n="生成配置">生成配置</h3>
+      <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 text-sm mb-4">
+        <label class="space-y-1.5"><span class="text-muted-foreground" data-i18n="图片超时（秒）">图片超时（秒）</span>
+          <input id="cfg-image-timeout" type="number" min="30" max="3600" step="1" required class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+        <label class="space-y-1.5"><span class="text-muted-foreground" data-i18n="语音超时（秒）">语音超时（秒）</span>
+          <input id="cfg-speech-timeout" type="number" min="30" max="3600" step="1" required class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+        <label class="space-y-1.5"><span class="text-muted-foreground" data-i18n="视频超时（秒）">视频超时（秒）</span>
+          <input id="cfg-video-timeout" type="number" min="60" max="7200" step="1" required class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+        <label class="space-y-1.5"><span class="text-muted-foreground" data-i18n="最大重试次数">最大重试次数</span>
+          <input id="cfg-max-retries" type="number" min="0" max="10" step="1" required class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+      </div>
+      <button data-save="generation" class="save-btn rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-4 text-sm" data-i18n="保存">保存</button>
+      <p class="text-xs text-muted-foreground mt-3" data-i18n="重试仅用于免费请求与媒体下载，付费生成提交不会自动重发。">重试仅用于免费请求与媒体下载，付费生成提交不会自动重发。</p>
+    </div>
+
+    <div class="rounded-lg border border-border bg-background p-5">
+      <h3 class="text-lg font-semibold mb-4" data-i18n="池子配置">池子配置</h3>
+      <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 text-sm mb-4">
+        <label class="space-y-1.5"><span class="text-muted-foreground" data-i18n="选择策略">选择策略</span>
+          <select id="cfg-call-mode" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5">
+            <option value="default" data-i18n="负载感知">负载感知</option>
+            <option value="polling" data-i18n="顺序轮询">顺序轮询</option>
+          </select></label>
+        <label class="space-y-1.5"><span class="text-muted-foreground" data-i18n="连续错误禁用阈值">连续错误禁用阈值</span>
+          <input id="cfg-error-ban" type="number" min="1" max="100" step="1" required class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+        <label class="space-y-1.5"><span class="text-muted-foreground" data-i18n="保活间隔（分钟）">保活间隔（分钟）</span>
+          <input id="cfg-keepalive-interval" type="number" min="5" max="1440" step="1" required class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+        <label class="space-y-1.5"><span class="text-muted-foreground" data-i18n="YesCaptcha ClientKey（验证码打码）">YesCaptcha ClientKey（验证码打码）</span>
+          <input id="cfg-yescaptcha-key" type="password" autocomplete="new-password" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5 font-mono text-xs" data-i18n-placeholder="已配置（输入新值可更换）" placeholder="已配置（输入新值可更换）"></label>
+      </div>
+      <div class="space-y-3 mb-4">
+        <label class="flex items-center gap-3 text-sm cursor-pointer">
+          <input type="checkbox" id="cfg-quota-preflight" class="sr-only peer">
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <span data-i18n="提交前配额预检">提交前配额预检</span></label>
+        <label class="flex items-center gap-3 text-sm cursor-pointer">
+          <input type="checkbox" id="cfg-keepalive-enabled" class="sr-only peer">
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <span data-i18n="空闲会话保活（自动探活并续期 Cookie）">空闲会话保活（自动探活并续期 Cookie）</span></label>
+      </div>
+      <button data-save="pool" class="save-btn rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-4 text-sm" data-i18n="保存">保存</button>
+    </div>
+
+    <div class="rounded-lg border border-border bg-background p-5">
+      <h3 class="text-lg font-semibold mb-4" data-i18n="登录与恢复">登录与恢复</h3>
+      <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 text-sm mb-4">
+        <label class="flex items-center gap-2 sm:col-span-2"><input id="cfg-auto-relogin" type="checkbox" class="accent-primary"><span data-i18n="启用自动重登">启用自动重登</span></label>
+        <label class="space-y-1.5"><span class="text-muted-foreground" data-i18n="自动重登冷却（秒）">自动重登冷却（秒）</span>
+          <input id="cfg-relogin-cooldown" type="number" min="60" max="86400" step="1" required class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+        <label class="space-y-1.5"><span class="text-muted-foreground" data-i18n="登录等待超时（秒）">登录等待超时（秒）</span>
+          <input id="cfg-login-timeout" type="number" min="60" max="1800" step="1" required class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+      </div>
+      <p class="text-xs text-muted-foreground mb-4" data-i18n="自动重登仅用于已保存登录凭据的账号。关闭后仍保留会话保活与手动登录。">自动重登仅用于已保存登录凭据的账号。关闭后仍保留会话保活与手动登录。</p>
+      <button data-save="login" class="save-btn rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-4 text-sm" data-i18n="保存">保存</button>
+    </div>
+
+    <div class="rounded-lg border border-border bg-background p-5">
+      <h3 class="text-lg font-semibold mb-4" data-i18n="代理配置">代理配置</h3>
+      <p class="text-xs text-muted-foreground mb-4" data-i18n="账号代理优先于全局代理。修改后在下次上游操作前验证并切换；测试仅检查当前输入的地址。">账号代理优先于全局代理。修改后在下次上游操作前验证并切换；测试仅检查当前输入的地址。</p>
+      <div class="flex flex-wrap items-end gap-4 text-sm mb-4">
+        <label class="flex items-center gap-3 cursor-pointer mr-2">
+          <input type="checkbox" id="cfg-proxy-enabled" class="sr-only peer">
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <span data-i18n="启用代理">启用代理</span></label>
+        <label class="space-y-1.5 flex-1 min-w-0 w-full basis-full"><span class="text-muted-foreground" data-i18n="代理地址">代理地址</span>
+          <input id="cfg-proxy-url" placeholder="http://127.0.0.1:7890" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+        <button onclick="testProxy()" id="proxyTestBtn" class="rounded-md border border-input hover:bg-accent h-8 px-3 text-sm" data-i18n="测试连通">测试连通</button>
+      </div>
+      <button data-save="proxy" class="save-btn rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-4 text-sm" data-i18n="保存">保存</button>
+    </div>
+
+    <div class="rounded-lg border border-border bg-background p-5">
+      <h3 class="text-lg font-semibold mb-4" data-i18n="缓存配置">缓存配置</h3>
+      <div class="flex flex-wrap items-end gap-4 text-sm mb-4">
+        <label class="flex items-center gap-3 cursor-pointer mr-2">
+          <input type="checkbox" id="cfg-cache-enabled" class="sr-only peer">
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <span data-i18n="启用产物缓存">启用产物缓存</span></label>
+        <label class="space-y-1.5 w-40"><span class="text-muted-foreground" data-i18n="缓存时长（秒）">缓存时长（秒）</span>
+          <input id="cfg-cache-timeout" type="number" min="0" max="86400" step="1" required class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+        <label class="space-y-1.5 flex-1 min-w-0 w-full basis-full"><span class="text-muted-foreground" data-i18n="外链基地址（可选）">外链基地址（可选）</span>
+          <input id="cfg-cache-base-url" placeholder="https://cdn.example.com" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+      </div>
+      <button data-save="cache" class="save-btn rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-4 text-sm" data-i18n="保存">保存</button>
+      <div class="text-xs text-muted-foreground mt-3 space-y-2">
+        <p data-i18n="缓存时长为 0 时不自动过期。关闭缓存后，图片接口需使用 b64_json 响应格式。">缓存时长为 0 时不自动过期。关闭缓存后，图片接口需使用 b64_json 响应格式。</p>
+        <p><span data-i18n="已保存的访问前缀">已保存的访问前缀</span>：<code id="cfg-cache-effective-url" class="break-all font-mono">—</code></p>
+      </div>
+    </div>
+
+    <div class="rounded-lg border border-border bg-background p-5">
+      <h3 class="text-lg font-semibold mb-2" data-i18n="扩展推送">扩展推送</h3>
+      <p class="text-xs text-muted-foreground mb-4" data-i18n="浏览器扩展通过该令牌向账号池推送或刷新凭据">浏览器扩展通过该令牌向账号池推送或刷新凭据</p>
+      <div class="block text-sm mb-4 space-y-1.5"><label for="cfg-ext-url" class="text-muted-foreground" data-i18n="推送接口地址">推送接口地址</label>
+        <div class="flex items-center gap-2">
+          <input id="cfg-ext-url" readonly class="min-w-0 flex-1 rounded-md border border-input bg-muted px-3 py-1.5 font-mono text-xs">
+          <button type="button" onclick="copyExtUrl()" class="rounded-md border border-input h-8 px-3 text-sm" data-i18n="复制地址">复制地址</button>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-4 text-sm mb-4">
+        <label class="flex items-center gap-3 cursor-pointer mr-2">
+          <input type="checkbox" id="cfg-ext-enabled" class="sr-only peer">
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <span data-i18n="启用推送端点">启用推送端点</span></label>
+        <div class="flex items-center gap-2 flex-1 min-w-[280px]">
+          <label for="cfg-ext-token" class="sr-only" data-i18n="推送令牌">推送令牌</label>
+          <input id="cfg-ext-token" minlength="8" maxlength="256" autocomplete="off" class="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-1.5 font-mono text-xs">
+          <button onclick="copyExtToken()" class="icon-btn border border-input" title="复制令牌" data-i18n-title="复制令牌">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <button data-save="extension" class="save-btn rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-4 text-sm" data-i18n="保存">保存</button>
+        <button onclick="regenerateExtToken()" class="rounded-md border border-input hover:bg-accent h-8 px-3 text-sm" data-i18n="重置令牌">重置令牌</button>
+      </div>
+      <label class="flex items-center gap-2 text-sm"><input id="cfg-ext-auto-enable" type="checkbox" class="accent-primary"><span data-i18n="推送刷新成功后恢复自动封禁账号">推送刷新成功后恢复自动封禁账号</span></label>
+      <p class="text-xs text-muted-foreground mt-2" data-i18n="手动停用的账号保持停用。令牌留空可保留原值。">手动停用的账号保持停用。令牌留空可保留原值。</p>
+    </div>
+
+    <div class="rounded-lg border border-border bg-background p-5">
+      <h3 class="text-lg font-semibold mb-4" data-i18n="调试日志">调试日志</h3>
+      <div class="space-y-3 mb-4">
+        <label class="flex items-center gap-3 text-sm cursor-pointer">
+          <input type="checkbox" id="cfg-debug-enabled" class="sr-only peer">
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <span data-i18n="启用调试日志">启用调试日志</span></label>
+        <label class="flex items-center gap-3 text-sm cursor-pointer">
+          <input type="checkbox" id="cfg-debug-requests" class="sr-only peer">
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <span data-i18n="记录请求摘要">记录请求摘要</span></label>
+        <label class="flex items-center gap-3 text-sm cursor-pointer">
+          <input type="checkbox" id="cfg-debug-responses" class="sr-only peer">
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <span data-i18n="记录响应摘要">记录响应摘要</span></label>
+        <label class="flex items-center gap-3 text-sm cursor-pointer">
+          <input type="checkbox" id="cfg-debug-mask" class="sr-only peer">
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+          <span data-i18n="严格脱敏">严格脱敏</span></label>
+      </div>
+      <button data-save="debug" class="save-btn rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-4 text-sm" data-i18n="保存">保存</button>
+      <p class="text-xs text-muted-foreground mt-3" data-i18n="调试日志仅记录脱敏后的结构摘要，凭据、文本内容与媒体数据始终隐藏。">调试日志仅记录脱敏后的结构摘要，凭据、文本内容与媒体数据始终隐藏。</p>
+    </div>
+
+    <div class="rounded-lg border border-border bg-background p-5">
+      <h3 class="text-lg font-semibold mb-2" data-i18n="管理员与 API Key">管理员与 API Key</h3>
+      <p class="text-xs text-muted-foreground mb-4"><span data-i18n="当前 API Key">当前 API Key</span>：<code id="api-key-hint" class="font-mono"></code></p>
+      <div class="grid gap-4 grid-cols-1 text-sm mb-4">
+        <div class="space-y-2">
+          <span class="text-muted-foreground" data-i18n="修改管理凭据">修改管理凭据</span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="space-y-1.5"><span data-i18n="用户名">用户名</span><input id="cfg-admin-username" required maxlength="128" autocomplete="username" class="w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+            <label class="space-y-1.5"><span data-i18n="旧密码">旧密码</span><input id="cfg-admin-old-password" type="password" required maxlength="1024" autocomplete="current-password" class="w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+            <label class="space-y-1.5"><span data-i18n="新密码">新密码</span><input id="cfg-admin-password" type="password" required minlength="4" maxlength="1024" autocomplete="new-password" class="w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+            <label class="space-y-1.5"><span data-i18n="确认新密码">确认新密码</span><input id="cfg-admin-confirm-password" type="password" required minlength="4" maxlength="1024" autocomplete="new-password" class="w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+          </div>
+          <button id="save-admin-credentials" onclick="saveAdminCredentials()" class="rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm" data-i18n="更新管理凭据">更新管理凭据</button>
+        </div>
+        <div class="space-y-2">
+          <span class="text-muted-foreground" data-i18n="更新 API Key">更新 API Key</span>
+          <div class="flex gap-2">
+            <input id="cfg-api-key" required minlength="8" maxlength="512" autocomplete="off" class="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-1.5 font-mono text-xs" placeholder="sk-vids2api-...">
+            <button id="save-api-key" onclick="saveApiKey()" class="rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-8 px-3 text-sm whitespace-nowrap" data-i18n="更新">更新</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 请求日志面板 -->
+  <div id="panelLogs" class="hidden">
+    <div class="rounded-lg border border-border bg-background">
+      <div class="flex flex-wrap items-center justify-between gap-4 p-4 border-b border-border">
+        <div><h3 class="text-lg font-semibold" data-i18n="请求日志">请求日志</h3><p class="text-xs text-muted-foreground mt-1" data-i18n="查看调用状态、耗时与生成结果">查看调用状态、耗时与生成结果</p></div>
+        <div class="flex flex-wrap items-center gap-3">
+          <label class="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="checkbox" id="logsAutoRefresh" class="sr-only peer" onchange="toggleLogAutoRefresh()">
+            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            <span class="text-xs text-muted-foreground" data-i18n="自动刷新">自动刷新</span></label>
+          <button id="logsRefreshBtn" onclick="loadLogs()" class="icon-btn" title="刷新" data-i18n-title="刷新" aria-label="刷新" data-i18n-aria-label="刷新">
+            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+          </button>
+          <button id="logsClearBtn" onclick="clearLogs()" class="inline-flex items-center justify-center rounded-md border border-input hover:bg-accent h-8 px-3 text-sm text-destructive" data-i18n="清空">清空</button>
+        </div>
+      </div>
+      <form id="logsFilters" class="log-filters">
+        <div class="log-search"><input id="logsQuery" type="search" maxlength="200" aria-label="搜索日志" data-i18n-aria-label="搜索日志" placeholder="生成 ID、账号邮箱或编号" data-i18n-placeholder="生成 ID、账号邮箱或编号"><button type="submit" class="rounded-md bg-primary text-primary-foreground px-3 text-xs whitespace-nowrap" data-i18n="搜索">搜索</button></div>
+        <select id="logsOperation" aria-label="生成类型" data-i18n-aria-label="生成类型"><option value="" data-i18n="全部类型">全部类型</option><option value="image" data-i18n="图片">图片</option><option value="video" data-i18n="视频">视频</option><option value="speech" data-i18n="语音">语音</option></select>
+        <select id="logsStatus" aria-label="请求状态" data-i18n-aria-label="请求状态"><option value="" data-i18n="全部状态">全部状态</option><option value="completed" data-i18n="已完成">已完成</option><option value="processing" data-i18n="处理中 / 已受理">处理中 / 已受理</option><option value="failed" data-i18n="失败">失败</option><option value="unknown" data-i18n="结果待确认">结果待确认</option></select>
+        <select id="logsDays" aria-label="时间范围" data-i18n-aria-label="时间范围"><option value="0" data-i18n="全部时间">全部时间</option><option value="1" data-i18n="最近 24 小时">最近 24 小时</option><option value="7" data-i18n="最近 7 天">最近 7 天</option><option value="30" data-i18n="最近 30 天">最近 30 天</option></select>
+        <button type="button" id="logsResetBtn" class="rounded-md border border-input h-9 px-3 text-xs" data-i18n="重置筛选">重置筛选</button>
+      </form>
+      <div id="logsFeedback" class="hidden px-4 py-3 text-sm" role="status" aria-live="polite"></div>
+      <div class="relative w-full overflow-x-auto">
+        <table class="logs-table">
+          <colgroup><col style="width:9rem"><col style="width:6rem"><col style="width:12rem"><col style="width:10rem"><col style="width:6rem"><col><col style="width:5rem"></colgroup>
+          <thead>
+            <tr class="border-b border-border">
+              <th class="h-10 px-2.5 text-left align-middle font-medium text-muted-foreground" data-i18n="时间">时间</th>
+              <th class="h-10 px-2.5 text-center align-middle font-medium text-muted-foreground" data-i18n="生成类型">生成类型</th>
+              <th class="h-10 px-2.5 text-center align-middle font-medium text-muted-foreground" data-i18n="账号">账号</th>
+              <th class="h-10 px-2.5 text-center align-middle font-medium text-muted-foreground" data-i18n="请求状态">请求状态</th>
+              <th class="h-10 px-2.5 text-center align-middle font-medium text-muted-foreground" data-i18n="耗时（秒）">耗时（秒）</th>
+              <th class="h-10 px-2.5 text-left align-middle font-medium text-muted-foreground">Generation ID</th>
+              <th class="h-10 px-2.5 text-right align-middle font-medium text-muted-foreground" data-i18n="操作">操作</th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody" class="divide-y divide-border"></tbody>
+        </table>
+      </div>
+      <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-border text-xs text-muted-foreground">
+        <span id="logsRange" role="status" aria-live="polite"></span>
+        <div class="flex flex-wrap items-center gap-3"><label class="flex items-center gap-2"><span data-i18n="每页">每页</span><select id="logsPageSize" class="rounded-md border border-input bg-background h-8 px-2"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select></label><button id="logsPrevBtn" class="rounded-md border border-input h-8 px-3" disabled data-i18n="上一页">上一页</button><span id="logsPage"></span><button id="logsNextBtn" class="rounded-md border border-input h-8 px-3" disabled data-i18n="下一页">下一页</button></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="shrink-0 border-t border-border px-4 py-5 text-center text-xs text-muted-foreground">
+  <p>© 2026 <a href="https://linux.do/u/thesmallhancat/summary" target="_blank" rel="noopener noreferrer" class="underline underline-offset-2 hover:opacity-80">TheSmallHanCat</a>. All rights reserved.</p>
+</footer>
+
+<!-- 接入账号 -->
+<div id="addModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-background rounded-lg border border-border w-full max-w-lg p-6 space-y-4 animate-slide-up my-8">
+    <h3 class="text-lg font-semibold" data-i18n="接入 Vids 账号">接入 Vids 账号</h3>
+    <div class="space-y-1.5 text-sm">
+      <label class="block space-y-1"><span class="text-muted-foreground" data-i18n="编辑器 URL">编辑器 URL</span>
+        <input id="add-editor-url" placeholder="https://docs.google.com/videos/d/.../edit" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5 font-mono text-xs"></label>
+      <label class="block space-y-1"><span class="text-muted-foreground" data-i18n="Cookie（JSON 数组或请求头字符串）">Cookie（JSON 数组或请求头字符串）</span>
+        <textarea id="add-cookies" rows="6" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5 font-mono text-xs"></textarea></label>
+      <label class="block space-y-1"><span class="text-muted-foreground" data-i18n="备注">备注</span>
+        <input id="add-remark" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+      <label class="block space-y-1"><span class="text-muted-foreground" data-i18n="专属代理（可选）">专属代理（可选）</span>
+        <input id="add-proxy" placeholder="http://127.0.0.1:7890" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+    </div>
+    <p class="text-xs text-muted-foreground" data-i18n="导入前会自动验证编辑器会话、账号身份与配额">导入前会自动验证编辑器会话、账号身份与配额</p>
+    <div class="flex items-center gap-3">
+      <div class="h-px flex-1 bg-border"></div>
+      <span class="text-xs text-muted-foreground" data-i18n="或">或</span>
+      <div class="h-px flex-1 bg-border"></div>
+    </div>
+    <button onclick="closeModal('addModal'); openServerLoginModal()" class="w-full rounded-md border border-input hover:bg-accent h-9 px-4 text-sm inline-flex items-center justify-center gap-2">
+      <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      <span data-i18n="通过服务器浏览器登录">通过服务器浏览器登录</span>
+    </button>
+    <div class="flex justify-end gap-2 pt-2">
+      <button onclick="closeModal('addModal')" class="rounded-md border border-input hover:bg-accent h-9 px-4 text-sm" data-i18n="取消">取消</button>
+      <button onclick="submitAddAccount()" id="addSubmitBtn" class="rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 text-sm" data-i18n="导入">导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 服务器浏览器登录 -->
+<div id="serverLoginModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-background rounded-lg border border-border w-full max-w-md p-6 space-y-4 animate-slide-up my-8">
+    <h3 class="text-lg font-semibold" data-i18n="服务器浏览器登录">服务器浏览器登录</h3>
+    <p class="text-xs text-muted-foreground" data-i18n="Google 登录将在服务器端的浏览器中完成，登录后凭据自动接入账号池，失效时由浏览器 Profile 自动续期">Google 登录将在服务器端的浏览器中完成，登录后凭据自动接入账号池，失效时由浏览器 Profile 自动续期</p>
+    <div class="space-y-1.5 text-sm">
+      <label class="block space-y-1"><span class="text-muted-foreground" data-i18n="Google 账号（可选，用于全自动登录）">Google 账号（可选，用于全自动登录）</span>
+        <input id="login-email" autocomplete="off" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+      <label class="block space-y-1"><span class="text-muted-foreground" data-i18n="Google 密码（可选）">Google 密码（可选）</span>
+        <input id="login-password" type="password" autocomplete="new-password" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+      <label class="block space-y-1"><span class="text-muted-foreground" data-i18n="两步验证密钥 / TOTP（可选）">两步验证密钥 / TOTP（可选）</span>
+        <input id="login-totp" autocomplete="off" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5 font-mono text-xs"></label>
+      <label class="block space-y-1"><span class="text-muted-foreground" data-i18n="登录代理（可选，http:// 或 socks5://）">登录代理（可选，http:// 或 socks5://）</span>
+        <input id="login-proxy" autocomplete="off" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5 font-mono text-xs"></label>
+    </div>
+    <p class="text-xs text-muted-foreground" data-i18n="填写账号与密码后登录全程自动完成；不填写则通过远程桌面手动登录。凭据保存后用于会话失效时自动重登">填写账号与密码后登录全程自动完成；不填写则通过远程桌面手动登录。凭据保存后用于会话失效时自动重登</p>
+    <div id="server-login-status" class="rounded-md border border-border bg-muted/40 p-3 text-sm space-y-1.5"></div>
+    <div class="flex flex-wrap justify-end gap-2">
+      <button onclick="closeModal('serverLoginModal')" class="rounded-md border border-input hover:bg-accent h-9 px-4 text-sm" data-i18n="关闭">关闭</button>
+      <button onclick="cancelServerLogin()" id="serverLoginCancelBtn" class="hidden rounded-md border border-input hover:bg-accent h-9 px-4 text-sm" data-i18n="取消登录">取消登录</button>
+      <button onclick="openVncWindow()" id="serverLoginVncBtn" class="hidden rounded-md border border-input hover:bg-accent h-9 px-4 text-sm" data-i18n="打开远程桌面">打开远程桌面</button>
+      <button onclick="startServerLogin()" id="serverLoginStartBtn" class="rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 text-sm disabled:opacity-50" data-i18n="开始登录">开始登录</button>
+    </div>
+  </div>
+</div>
+
+<!-- 编辑账号 -->
+<div id="editModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-background rounded-lg border border-border w-full max-w-md p-6 space-y-4 animate-slide-up my-8">
+    <h3 class="text-lg font-semibold" data-i18n="编辑账号">编辑账号</h3>
+    <div class="space-y-3 text-sm">
+      <label class="block space-y-1"><span class="text-muted-foreground" data-i18n="备注">备注</span>
+        <input id="edit-remark" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+      <label class="block space-y-1"><span class="text-muted-foreground" data-i18n="专属代理">专属代理</span>
+        <input id="edit-proxy" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5"></label>
+      <div class="flex gap-4 pt-1">
+        <label class="flex items-center gap-2 cursor-pointer"><input id="edit-image" type="checkbox" class="accent-primary" checked><span data-i18n="图片能力">图片能力</span></label>
+        <label class="flex items-center gap-2 cursor-pointer"><input id="edit-video" type="checkbox" class="accent-primary" checked><span data-i18n="视频能力">视频能力</span></label>
+        <label class="flex items-center gap-2 cursor-pointer"><input id="edit-speech" type="checkbox" class="accent-primary" checked><span data-i18n="语音能力">语音能力</span></label>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 pt-2">
+      <button onclick="closeModal('editModal')" class="rounded-md border border-input hover:bg-accent h-9 px-4 text-sm" data-i18n="取消">取消</button>
+      <button onclick="submitEditAccount()" id="editSubmitBtn" class="rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 text-sm" data-i18n="保存">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 更换 Cookie -->
+<div id="replaceModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto">
+  <div class="bg-background rounded-lg border border-border w-full max-w-lg p-6 space-y-4 animate-slide-up my-8">
+    <h3 class="text-lg font-semibold" data-i18n="更换 Cookie">更换 Cookie</h3>
+    <p class="text-xs text-muted-foreground"><span data-i18n="目标账号">目标账号</span>：<code id="replace-target" class="font-mono"></code></p>
+    <textarea id="replace-cookies" rows="6" class="flex w-full rounded-md border border-input bg-background px-3 py-1.5 font-mono text-xs" data-i18n-placeholder="粘贴新的 Cookie（JSON 数组或请求头字符串）" placeholder="粘贴新的 Cookie（JSON 数组或请求头字符串）"></textarea>
+    <div class="flex justify-end gap-2 pt-2">
+      <button onclick="closeModal('replaceModal')" class="rounded-md border border-input hover:bg-accent h-9 px-4 text-sm" data-i18n="取消">取消</button>
+      <button onclick="submitReplaceCookies()" id="replaceSubmitBtn" class="rounded-md bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 text-sm" data-i18n="更换">更换</button>
+    </div>
+  </div>
+</div>
+
+<!-- 日志详情 -->
+<div id="logModal" class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="logDetailTitle">
+  <div class="log-dialog bg-background rounded-lg border border-border w-full max-w-3xl animate-slide-up min-w-0">
+    <div class="log-dialog-header flex items-center justify-between gap-3"><h3 id="logDetailTitle" class="text-lg font-semibold" data-i18n="日志详情">日志详情</h3><button id="logDetailClose" onclick="closeModal('logModal')" class="rounded-md border border-input h-8 px-3 text-xs" data-i18n="关闭">关闭</button></div>
+    <div id="logDetailContent" class="space-y-3 text-sm"></div>
+    <div class="log-dialog-footer flex justify-end">
+      <button onclick="closeModal('logModal')" class="rounded-md border border-input hover:bg-accent h-9 px-4 text-sm" data-i18n="关闭">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/i18n.js"></script>
+<script>
+const apiRequest = async (url, options = {}) => {
+  const headers = { ...I18n.headers(), ...(options.headers || {}) };
+  const response = await fetch(url, { credentials: "include", ...options, headers });
+  if (response.status === 401) { location.href = "/login"; return null; }
+  return response;
+};
+
+const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+}[c]));
+
+const showToast = (message, type = "info", duration = 2600) => {
+  const colors = { success: "bg-green-600", error: "bg-destructive", info: "bg-primary" };
+  const node = document.createElement("div");
+  node.className = `fixed bottom-4 right-4 z-[60] ${colors[type] || colors.info} text-white px-4 py-2.5 rounded-lg shadow-lg text-sm animate-slide-up max-w-sm break-all`;
+  node.textContent = message;
+  document.body.appendChild(node);
+  setTimeout(() => node.remove(), duration);
+};
+
+const closeModal = (id) => {
+  document.getElementById(id).classList.add("hidden");
+  if (id === "serverLoginModal") stopServerLoginPolling();
+  if (id === "logModal") closeLogDetail();
+};
+const openModal = (id) => document.getElementById(id).classList.remove("hidden");
+window.addEventListener("click", (event) => {
+  document.querySelectorAll(".fixed.inset-0:not(.hidden)").forEach((modal) => {
+    if (event.target === modal) closeModal(modal.id);
+  });
+});
+
+const logout = async () => {
+  await apiRequest("/api/logout", { method: "POST" }).catch(() => null);
+  location.href = "/login";
+};
+
+// ---- tabs ----
+const switchTab = (name) => {
+  document.querySelectorAll(".tab-btn").forEach((btn) => {
+    const active = btn.dataset.tab === name;
+    btn.classList.toggle("border-primary", active);
+    btn.classList.toggle("border-transparent", !active);
+  });
+  ["accounts", "settings", "logs"].forEach((panel) => {
+    document.getElementById(`panel${panel[0].toUpperCase()}${panel.slice(1)}`).classList.toggle("hidden", panel !== name);
+  });
+  setLogsActive(name === "logs");
+};
+
+// ---- stats & accounts ----
+const quotaCell = (quota, kind) => {
+  const item = quota && quota[kind];
+  if (!item) return "-";
+  return item.total >= 999999 ? "∞" : String(item.available);
+};
+
+const statusBadge = (account) => {
+  if (!account.is_active) return `<span class="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs">${esc(I18n.t("已禁用"))}</span>`;
+  if (account.status === "ready") return `<span class="inline-flex items-center rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-xs">${esc(I18n.t("就绪"))}</span>`;
+  if (account.status === "session_error") return `<span class="inline-flex items-center rounded-full bg-red-50 text-destructive px-2 py-0.5 text-xs">${esc(I18n.t("会话失效"))}</span>`;
+  if (account.status === "banned") return `<span class="inline-flex items-center rounded-full bg-orange-50 text-orange-600 px-2 py-0.5 text-xs">${esc(I18n.t("已封禁"))}</span>`;
+  return `<span class="inline-flex items-center rounded-full bg-muted text-muted-foreground px-2 py-0.5 text-xs">${esc(account.status || "-")}</span>`;
+};
+
+const capabilityBadges = (account) => {
+  const badge = (enabled, label, path) => {
+    const title = `${I18n.t(label)} · ${I18n.t(enabled ? "已启用" : "已禁用")}`;
+    return `<span class="capability-badge${enabled ? "" : " is-disabled"}" role="img" aria-label="${esc(title)}" title="${esc(title)}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${path}</svg>
+      <span class="capability-label">${esc(I18n.t(label))}</span>
+    </span>`;
+  };
+  return `<span class="capability-list">${[
+    badge(account.image_enabled, "图片", '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>'),
+    badge(account.video_enabled, "视频", '<rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3z"/>'),
+    badge(account.speech_enabled, "语音", '<path d="m11 5-5 4H3v6h3l5 4zM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>'),
+  ].join("")}</span>`;
+};
+
+const actionButton = (action, title, path, accountId, extra = "") =>
+  `<button class="icon-btn" title="${esc(title)}" data-action="${action}" data-id="${accountId}" ${extra}>
+     <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${path}</svg>
+   </button>`;
+
+const renderAccounts = (accounts) => {
+  const body = document.getElementById("accountTableBody");
+  if (!accounts.length) {
+    body.innerHTML = `<tr><td colspan="8" class="py-10 text-center text-muted-foreground text-sm">${esc(I18n.t("暂无账号，点击右上角接入"))}</td></tr>`;
+    return;
+  }
+  body.innerHTML = accounts.map((a) => {
+    const totalCounts = [a.image_count ?? 0, a.video_count ?? 0, a.speech_count ?? 0].join(" / ");
+    const quotaCounts = [quotaCell(a.quota, "image"), quotaCell(a.quota, "video"), quotaCell(a.quota, "speech")].join(" / ");
+    const identity = `<div class="font-medium truncate max-w-[220px]" title="${esc(a.email)}">${esc(a.email)}</div>
+      <div class="text-xs text-muted-foreground truncate max-w-[220px]">${esc(a.remark || "-")}</div>`;
+    const toggleTitle = a.is_active ? I18n.t("禁用") : I18n.t("启用");
+    return `<tr class="hover:bg-muted/40">
+      <td class="px-2.5 py-3 align-middle">${identity}</td>
+      <td class="px-2.5 py-3 text-center align-middle">${statusBadge(a)}</td>
+      <td class="px-2.5 py-3 text-center align-middle">${capabilityBadges(a)}</td>
+      <td class="px-2.5 py-3 text-center align-middle font-mono text-xs">${quotaCounts}</td>
+      <td class="px-2.5 py-3 text-center align-middle font-mono text-xs">${totalCounts}</td>
+      <td class="px-2.5 py-3 text-center align-middle">${a.use_count ?? 0}</td>
+      <td class="px-2.5 py-3 align-middle text-xs text-muted-foreground max-w-[180px] truncate" title="${esc(a.last_error || "")}">${esc(a.last_error || "-")}</td>
+      <td class="px-2.5 py-3 text-right align-middle whitespace-nowrap">
+        ${actionButton("test", I18n.t("测试"), '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>', a.id)}
+        ${actionButton("start", I18n.t("恢复会话"), '<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>', a.id)}
+        ${actionButton("quota", I18n.t("刷新配额"), '<path d="M12 2v20M2 12h20"/>', a.id)}
+        ${a.status === "session_error" ? actionButton("relogin", I18n.t("重新登录"), '<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>', a.id) : ""}
+        ${actionButton("cookies", I18n.t("更换 Cookie"), '<path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>', a.id)}
+        ${actionButton("edit", I18n.t("编辑"), '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>', a.id)}
+        ${actionButton("toggle", toggleTitle, '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>', a.id, `data-active="${a.is_active}"`)}
+        ${actionButton("delete", I18n.t("删除"), '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>', a.id)}
+      </td>
+    </tr>`;
+  }).join("");
+  I18n.apply(document.getElementById("accountTableBody"));
+};
+
+let allAccounts = [];
+
+const loadAccounts = async () => {
+  const response = await apiRequest("/api/accounts").catch(() => null);
+  if (!response || !response.ok) return;
+  const { data } = await response.json();
+  allAccounts = data || [];
+  renderAccounts(allAccounts);
+};
+
+const loadStats = async () => {
+  const response = await apiRequest("/api/stats").catch(() => null);
+  if (!response || !response.ok) return;
+  const stats = await response.json();
+  document.getElementById("statTotal").textContent = stats.total_accounts;
+  document.getElementById("statActive").textContent = stats.active_accounts;
+  document.getElementById("statReady").textContent = stats.ready_accounts;
+  const gen = stats.generation || {};
+  document.getElementById("statGeneration").textContent = `${gen.today ?? 0} / ${gen.total ?? 0}`;
+  document.getElementById("statErrors").textContent = `${gen.today_errors ?? 0} / ${gen.total_errors ?? 0}`;
+};
+
+const loadAll = async () => { await Promise.all([loadStats(), loadAccounts()]); };
+
+// ---- account actions ----
+document.getElementById("accountTableBody").addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+  const id = button.dataset.id;
+  const action = button.dataset.action;
+  try {
+    if (action === "test") {
+      const response = await apiRequest(`/api/accounts/${id}/test`, { method: "POST" });
+      if (response && response.ok) {
+        const result = await response.json();
+        showToast(result.ready ? I18n.t("账号就绪") : `${I18n.t("账号异常")}: ${result.error || ""}`, result.ready ? "success" : "error");
+      }
+    } else if (action === "start") {
+      const response = await apiRequest(`/api/accounts/${id}/start`, { method: "POST" });
+      if (response && response.ok) showToast(I18n.t("会话已恢复"), "success");
+    } else if (action === "quota") {
+      const response = await apiRequest(`/api/accounts/${id}/refresh-quota`, { method: "POST" });
+      if (response && response.ok) showToast(I18n.t("配额已刷新"), "success");
+    } else if (action === "cookies") {
+      const account = allAccounts.find((item) => String(item.id) === String(id));
+      const target = document.getElementById("replace-target");
+      target.textContent = account ? account.email : `#${id}`;
+      target.dataset.id = id;
+      document.getElementById("replace-cookies").value = "";
+      openModal("replaceModal");
+      return;
+    } else if (action === "relogin") {
+      openServerLoginModal();
+      return;
+    } else if (action === "edit") {
+      const account = allAccounts.find((item) => String(item.id) === String(id));
+      if (!account) return;
+      document.getElementById("edit-remark").value = account.remark || "";
+      document.getElementById("edit-proxy").value = account.proxy_url || "";
+      document.getElementById("edit-image").checked = account.image_enabled;
+      document.getElementById("edit-video").checked = account.video_enabled;
+      document.getElementById("edit-speech").checked = account.speech_enabled;
+      document.getElementById("editSubmitBtn").dataset.id = id;
+      openModal("editModal");
+      return;
+    } else if (action === "toggle") {
+      const endpoint = button.dataset.active === "true" ? "disable" : "enable";
+      await apiRequest(`/api/accounts/${id}/${endpoint}`, { method: "POST" });
+    } else if (action === "delete") {
+      if (!confirm(I18n.t("确认删除该账号？其生成记录与产物将同时删除"))) return;
+      await apiRequest(`/api/accounts/${id}`, { method: "DELETE" });
+      showToast(I18n.t("账号已删除"), "success");
+    }
+  } catch (error) {
+    showToast(String(error), "error");
+  }
+  loadAll();
+});
+
+// ---- modals ----
+const openAddModal = () => {
+  ["add-editor-url", "add-cookies", "add-remark", "add-proxy"].forEach((id) => {
+    document.getElementById(id).value = "";
+  });
+  openModal("addModal");
+};
+
+// ---- server-browser login ----
+let serverLoginTimer = null;
+let serverLoginVncUrl = "";
+const serverLoginIdleStates = ["idle", "unavailable", "success", "failed", "timeout", "cancelled"];
+
+const renderServerLoginStatus = (state) => {
+  const box = document.getElementById("server-login-status");
+  const labels = {
+    idle: I18n.t("未开始"),
+    unavailable: I18n.t("浏览器 Profile 服务未启用"),
+    running: I18n.t("登录会话进行中，请在浏览器窗口完成 Google 登录"),
+    importing: I18n.t("登录成功，正在接入账号池…"),
+    success: `${I18n.t("接入成功")} #${state.account_id ?? ""}${state.email ? ` · ${state.email}` : ""}`,
+    timeout: I18n.t("登录超时，请重试"),
+    cancelled: I18n.t("登录已取消"),
+  };
+  const mainText = state.state === "failed" ? (state.error || I18n.t("登录失败")) : (labels[state.state] || state.state);
+  const tone = state.state === "success" ? "text-primary"
+    : ["failed", "timeout"].includes(state.state) ? "text-red-500" : "";
+  const hintLine = state.hint === "manual_challenge" && state.state === "running"
+    ? `<div class="text-amber-600 text-xs">${esc(I18n.t("Google 要求人工验证，请打开远程桌面手动完成"))}</div>` : "";
+  const captchaLine = state.state === "running" && state.captcha_status
+    ? `<div class="text-xs ${state.captcha_status === "solved" ? "text-primary" : "text-muted-foreground"}">${
+      state.captcha_status === "solving" ? esc(I18n.t("正在通过 YesCaptcha 自动完成验证码…"))
+        : state.captcha_status === "solved" ? esc(I18n.t("验证码已自动通过"))
+          : esc(I18n.t("验证码自动通过失败，将继续等待或需人工处理"))
+    }</div>` : "";
+  box.innerHTML = `<div class="${tone}">${esc(mainText)}</div>${captchaLine}${hintLine}${labels[state.state] && state.error ? `<div class="text-xs text-muted-foreground">${esc(state.error)}</div>` : ""}`;
+  const active = ["running", "importing"].includes(state.state);
+  const startBtn = document.getElementById("serverLoginStartBtn");
+  startBtn.disabled = active;
+  document.getElementById("serverLoginCancelBtn").classList.toggle("hidden", !active);
+  document.getElementById("serverLoginVncBtn").classList.toggle("hidden", !(state.state === "running" && serverLoginVncUrl));
+};
+
+const stopServerLoginPolling = () => {
+  if (serverLoginTimer) {
+    clearInterval(serverLoginTimer);
+    serverLoginTimer = null;
+  }
+};
+
+const pollServerLogin = async () => {
+  const response = await apiRequest("/api/accounts/server-login").catch(() => null);
+  if (!response || !response.ok) return;
+  const state = await response.json();
+  renderServerLoginStatus(state);
+  if (serverLoginIdleStates.includes(state.state)) stopServerLoginPolling();
+  if (state.state === "success") {
+    showToast(I18n.t("账号接入成功"), "success");
+    loadAll();
+  }
+};
+
+const openServerLoginModal = () => {
+  serverLoginVncUrl = "";
+  ["login-email", "login-password", "login-totp", "login-proxy"].forEach((id) => {
+    document.getElementById(id).value = "";
+  });
+  openModal("serverLoginModal");
+  renderServerLoginStatus({ state: "idle" });
+  stopServerLoginPolling();
+  pollServerLogin();
+  serverLoginTimer = setInterval(pollServerLogin, 3000);
+};
+
+const startServerLogin = async () => {
+  const button = document.getElementById("serverLoginStartBtn");
+  button.disabled = true;
+  const payloadBody = {
+    email: document.getElementById("login-email").value.trim(),
+    password: document.getElementById("login-password").value,
+    totp_secret: document.getElementById("login-totp").value.trim(),
+    proxy: document.getElementById("login-proxy").value.trim(),
+  };
+  const response = await apiRequest("/api/accounts/server-login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payloadBody),
+  }).catch((error) => {
+    showToast(String(error), "error");
+    return null;
+  });
+  button.disabled = false;
+  if (!response) return;
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    renderServerLoginStatus({ state: "failed", error: payload.error ? payload.error.message : I18n.t("启动失败") });
+    return;
+  }
+  if (payload.mode === "remote" && payload.vnc_password) {
+    const port = payload.vnc_port || 8690;
+    serverLoginVncUrl = `http://${location.hostname}:${port}/vnc.html?autoconnect=true&password=${encodeURIComponent(payload.vnc_password)}&resize=scale`;
+    window.open(serverLoginVncUrl, "_blank");
+  }
+  renderServerLoginStatus({ state: "running", mode: payload.mode });
+  stopServerLoginPolling();
+  serverLoginTimer = setInterval(pollServerLogin, 3000);
+};
+
+const cancelServerLogin = async () => {
+  await apiRequest("/api/accounts/server-login/cancel", { method: "POST" }).catch(() => null);
+  pollServerLogin();
+};
+
+const openVncWindow = () => {
+  if (serverLoginVncUrl) window.open(serverLoginVncUrl, "_blank");
+};
+
+const submitAddAccount = async () => {
+  const button = document.getElementById("addSubmitBtn");
+  button.disabled = true;
+  try {
+    const response = await apiRequest("/api/accounts/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        editor_url: document.getElementById("add-editor-url").value.trim(),
+        cookies: document.getElementById("add-cookies").value.trim(),
+        remark: document.getElementById("add-remark").value.trim(),
+        proxy_url: document.getElementById("add-proxy").value.trim(),
+      }),
+    });
+    const payload = response ? await response.json().catch(() => ({})) : {};
+    if (response && response.ok) {
+      showToast(`${I18n.t("账号已接入")} #${payload.account_id ?? ""}`, "success");
+      closeModal("addModal");
+      loadAll();
+    } else {
+      showToast(payload.error ? payload.error.message : I18n.t("接入失败"), "error");
+    }
+  } finally {
+    button.disabled = false;
+  }
+};
+
+const submitEditAccount = async () => {
+  const id = document.getElementById("editSubmitBtn").dataset.id;
+  const button = document.getElementById("editSubmitBtn");
+  button.disabled = true;
+  try {
+    const response = await apiRequest(`/api/accounts/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        remark: document.getElementById("edit-remark").value.trim(),
+        proxy_url: document.getElementById("edit-proxy").value.trim(),
+        image_enabled: document.getElementById("edit-image").checked,
+        video_enabled: document.getElementById("edit-video").checked,
+        speech_enabled: document.getElementById("edit-speech").checked,
+      }),
+    });
+    if (response && response.ok) {
+      showToast(I18n.t("已保存"), "success");
+      closeModal("editModal");
+      loadAccounts();
+    } else {
+      showToast(I18n.t("保存失败"), "error");
+    }
+  } finally {
+    button.disabled = false;
+  }
+};
+
+const submitReplaceCookies = async () => {
+  const id = document.getElementById("replace-target").dataset.id;
+  const button = document.getElementById("replaceSubmitBtn");
+  button.disabled = true;
+  try {
+    const response = await apiRequest(`/api/accounts/${id}/replace-cookies`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cookies: document.getElementById("replace-cookies").value.trim() }),
+    });
+    if (response && response.ok) {
+      showToast(I18n.t("Cookie 已更换"), "success");
+      closeModal("replaceModal");
+      loadAll();
+    } else {
+      const payload = await response.json().catch(() => ({}));
+      showToast(payload.error ? payload.error.message : I18n.t("更换失败"), "error");
+    }
+  } finally {
+    button.disabled = false;
+  }
+};
+
+// ---- settings ----
+const testProxy = async () => {
+  const button = document.getElementById("proxyTestBtn");
+  button.disabled = true;
+  const original = button.textContent;
+  button.textContent = I18n.t("测试中...");
+  try {
+    const response = await apiRequest("/api/proxy/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ proxy_url: document.getElementById("cfg-proxy-url").value.trim() }),
+    });
+    const payload = response ? await response.json().catch(() => ({})) : {};
+    if (response && response.ok && payload.ok) {
+      showToast(`${I18n.t("代理可用")} (${payload.status ?? "OK"})`, "success");
+    } else {
+      showToast(`${I18n.t("代理不可用")}: ${typeof payload.error === "string" ? payload.error : settingsErrorMessage(payload, response?.status || 0)}`, "error", 4000);
+    }
+  } catch {
+    showToast(I18n.t("连通测试失败，请检查网络后重试"), "error", 4000);
+  } finally {
+    button.disabled = false;
+    button.textContent = original;
+  }
+};
+
+
+
+// ---- language select ----
+document.querySelector("[data-language-select]").addEventListener("change", (event) => {
+  I18n.setLocale(event.target.value);
+});
+
+</script>
+<script src="/static/settings.js"></script>
+<script src="/static/logs.js"></script>
+<script>
+// ---- boot ----
+(async () => {
+  await I18n.init();
+  document.querySelector("[data-language-select]").value = I18n.locale;
+  await Promise.allSettled([loadAll(), loadSettings()]);
+})();
+</script>
+</body>
+</html>

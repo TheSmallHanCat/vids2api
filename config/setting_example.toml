@@ -1,0 +1,50 @@
+[global]
+# 首次启动时写入数据库的默认 API Key，之后以管理端配置为准
+api_key = "han1234"
+
+[server]
+host = "0.0.0.0"
+port = 8687
+
+[admin]
+# 首次启动时写入数据库的默认管理员账密，之后以管理端配置为准
+username = "admin"
+password = "admin"
+
+[generation]
+# 各类生成的超时（秒）
+image_timeout = 300
+speech_timeout = 300
+video_timeout = 1500
+# 免费请求与媒体下载的最大重试次数（付费生成提交永不自动重发）
+max_retries = 3
+
+[pool]
+# 账号选择策略：default = 按剩余配额加权选择空闲账号；polling = 按账号顺序轮询
+call_mode = "default"
+# 提交前是否执行配额预检（消耗一次只读请求，可提高成功率）
+quota_preflight = true
+# 连续失败达到该次数后自动禁用账号
+error_ban_threshold = 5
+
+[proxy]
+# 出站请求代理（留空禁用），支持 http/socks5，例：http://127.0.0.1:7890
+enabled = false
+proxy_url = ""
+
+[login]
+# 仅对已保存登录凭据的账号自动重登；不影响会话保活和手动登录
+auto_relogin_enabled = true
+relogin_cooldown_seconds = 3600
+login_timeout_seconds = 600
+
+[cache]
+# 生成媒体 URL 模式的缓存目录（项目内 tmp/）与过期时间（秒，0 = 永不过期）
+enabled = true
+cache_timeout = 7200
+
+[debug]
+enabled = false
+log_requests = false
+log_responses = false
+mask_token = true

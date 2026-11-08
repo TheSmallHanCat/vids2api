@@ -1,0 +1,54 @@
+# Python environments and generated files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage*
+htmlcov/
+build/
+dist/
+
+# Local configuration, credentials and runtime data
+.env
+.env.*
+!.env.example
+config/setting.toml
+ssh*.txt
+.ssh/
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+data/
+tmp/
+logs/
+logs.txt
+*.log
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+
+# Local verification and reference material
+tests/
+tools/
+artifacts/
+参考/
+
+# Editor and operating-system files
+.spec-workflow/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+node_modules/

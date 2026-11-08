@@ -1,0 +1,51 @@
+{
+  "extDescription": {
+    "message": "将当前浏览器的 Google 登录凭据一键推送到 Vids2API 账号池。"
+  },
+  "title": {
+    "message": "Vids2API 账号池推送"
+  },
+  "serverLabel": {
+    "message": "服务器地址"
+  },
+  "tokenLabel": {
+    "message": "推送令牌"
+  },
+  "remarkLabel": {
+    "message": "备注（可选）"
+  },
+  "pushButton": {
+    "message": "推送当前登录"
+  },
+  "statusWorking": {
+    "message": "正在收集凭据并推送…"
+  },
+  "statusDone": {
+    "message": "完成：账号已$ACTION$（#$ID$）",
+    "placeholders": {
+      "action": { "content": "$1" },
+      "id": { "content": "$2" }
+    }
+  },
+  "errNotConfigured": {
+    "message": "请先填写服务器地址与推送令牌"
+  },
+  "errNotSignedIn": {
+    "message": "当前浏览器未登录 Google（缺少 $1），请先登录后再推送"
+  },
+  "errHomeFetch": {
+    "message": "访问 Vids 主页失败（HTTP $1）"
+  },
+  "errNoDocument": {
+    "message": "未能找到或创建 Vids 文档，请手动打开 vids.new 完成创建后重试"
+  },
+  "errPermission": {
+    "message": "未授予服务器访问权限，无法推送"
+  },
+  "errPush": {
+    "message": "推送失败（HTTP $1）"
+  },
+  "errNoReply": {
+    "message": "后台服务无响应，请重新加载扩展"
+  }
+}

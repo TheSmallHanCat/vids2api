@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="登录 - Vids2API">登录 - Vids2API</title>
+  <script src="/static/i18n.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config={theme:{extend:{colors:{border:"hsl(0 0% 89%)",input:"hsl(0 0% 89%)",ring:"hsl(0 0% 3.9%)",background:"hsl(0 0% 100%)",foreground:"hsl(0 0% 3.9%)",primary:{DEFAULT:"hsl(0 0% 9%)",foreground:"hsl(0 0% 98%)"},secondary:{DEFAULT:"hsl(0 0% 96.1%)",foreground:"hsl(0 0% 9%)"},muted:{DEFAULT:"hsl(0 0% 96.1%)",foreground:"hsl(0 0% 45.1%)"},destructive:{DEFAULT:"hsl(0 84.2% 60.2%)",foreground:"hsl(0 0% 98%)"}}}}}
+  </script>
+</head>
+<body class="min-h-screen flex flex-col bg-background text-foreground antialiased" data-i18n-page="login">
+  <main class="flex flex-1 items-center justify-center px-4 py-8">
+    <div class="w-full max-w-sm">
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary text-primary-foreground mb-4">
+          <span class="text-lg font-bold">V2A</span>
+        </div>
+        <h1 class="text-2xl font-semibold" data-i18n="Vids2API 登录">Vids2API 登录</h1>
+        <p class="mt-2 text-sm text-muted-foreground" data-i18n="登录到管理控制台">登录到管理控制台</p>
+      </div>
+      <form id="login-form" class="rounded-lg border border-border bg-background p-6 space-y-4">
+        <div>
+          <label class="block text-sm text-muted-foreground mb-1.5" for="username" data-i18n="用户名">用户名</label>
+          <input id="username" name="username" type="text" autocomplete="username" required
+                 class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+        </div>
+        <div>
+          <label class="block text-sm text-muted-foreground mb-1.5" for="password" data-i18n="密码">密码</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required
+                 class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+        </div>
+        <p id="error" class="hidden text-sm text-destructive"></p>
+        <button type="submit" id="submit"
+                class="w-full rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 px-3 py-2.5 text-sm font-medium transition">
+          <span data-i18n="登录">登录</span>
+        </button>
+        <p class="text-xs text-muted-foreground text-center" data-i18n="首次部署请使用初始账号，登录后尽快修改">首次部署请使用初始账号，登录后尽快修改</p>
+      </form>
+    </div>
+  </main>
+  <footer class="shrink-0 border-t border-border px-4 py-5 text-center text-xs text-muted-foreground">
+    <p>© 2026 <a href="https://linux.do/u/thesmallhancat/summary" target="_blank" rel="noopener noreferrer" class="underline underline-offset-2 hover:opacity-80">TheSmallHanCat</a>. All rights reserved.</p>
+  </footer>
+  <script>
+    (async () => {
+      await I18n.init();
+      const probe = await fetch("/api/stats", { headers: I18n.headers() }).catch(() => null);
+      if (probe && probe.status === 200) { location.href = "/manage"; return; }
+      const form = document.getElementById("login-form");
+      const error = document.getElementById("error");
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        error.classList.add("hidden");
+        const submit = document.getElementById("submit");
+        submit.disabled = true;
+        try {
+          const response = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...I18n.headers() },
+            body: JSON.stringify({
+              username: document.getElementById("username").value.trim(),
+              password: document.getElementById("password").value,
+            }),
+          });
+          if (response.ok) { location.href = "/manage"; return; }
+          const detail = await response.json().catch(() => ({}));
+          error.textContent = detail?.error?.message || I18n.t("用户名或密码错误");
+          error.classList.remove("hidden");
+        } finally {
+          submit.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
